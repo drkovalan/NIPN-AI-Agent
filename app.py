@@ -22,7 +22,7 @@ uploaded_file = st.file_uploader("📂 Upload a document (PDF, TXT, CSV, Excel)"
 # -------------------------------
 # OpenRouter Setup
 # -------------------------------
-API_KEY = os.environ.get("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")  # Set in Streamlit Secrets
+# Set in Streamlit Secrets
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "deepseek/deepseek-chat-v3.1:free"  # You can change model here
 
@@ -87,4 +87,5 @@ if st.button("🚀 Ask AI"):
         query = user_input + "\n\n" + file_text
         answer = query_openrouter(query)
         st.success(answer)
+
 
