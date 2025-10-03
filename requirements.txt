@@ -1,5 +1,8 @@
 streamlit
 requests
-pandas
-matplotlib
+beautifulsoup4
+openrouter
+langchain
+unstructured
 openpyxl
+faiss-cpu
