@@ -2,11 +2,11 @@ import streamlit as st
 import os
 import requests
 from langchain.vectorstores import FAISS
+print("FAISS imported successfully!")
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import PyPDFLoader, TextLoader, UnstructuredExcelLoader, WebBaseLoader
 from openrouter import OpenRouterClient
-
 # ---- Streamlit Secrets ----
 API_KEY = st.secrets["OPENROUTER_API_KEY"]
 
@@ -116,5 +116,6 @@ if query:
         st.write(response['choices'][0]['message']['content'])
     else:
         st.warning("Please update the knowledge base first.")
+
 
 
