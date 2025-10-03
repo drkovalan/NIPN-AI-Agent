@@ -1,8 +1,8 @@
-streamlit
+streamlit==1.26.0
 requests
 beautifulsoup4
 openrouter
-langchain[faiss]
+langchain==0.1.200
 unstructured
 openpyxl
-faiss-cpu
+faiss-cpu==1.7.4
