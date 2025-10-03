@@ -1,10 +1,9 @@
 import streamlit as st
-from langchain.vectorstores import FAISS
+from langchain.vectorstores import Chroma
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import PyPDFLoader, TextLoader
 from openrouter import OpenRouterClient
-import os
 import pandas as pd
 
 # -------------------------------
@@ -44,15 +43,14 @@ if uploaded_files:
 if documents:
     splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
     docs_chunks = splitter.split_documents(documents)
-
     st.success(f"{len(docs_chunks)} chunks created from uploaded documents!")
 
     # -------------------------------
-    # 4. Create FAISS vector store
+    # 4. Create Chroma vector store (replaces FAISS)
     # -------------------------------
     embeddings = OpenAIEmbeddings(openai_api_key=API_KEY)
-    vector_store = FAISS.from_documents(docs_chunks, embeddings)
-    st.success("FAISS vector store created!")
+    vector_store = Chroma.from_documents(docs_chunks, embeddings)
+    st.success("Chroma vector store created!")
 
 # -------------------------------
 # 5. Query AI
