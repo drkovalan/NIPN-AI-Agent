@@ -5,3 +5,4 @@ openrouter
 langchain[faiss]
 unstructured
 openpyxl
+faiss-cpu
