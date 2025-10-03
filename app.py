@@ -30,7 +30,7 @@ MODEL = "deepseek/deepseek-chat-v3.1:free"  # You can change model here
 
 def query_openrouter(prompt):
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json"
     }
     data = {
@@ -81,7 +81,7 @@ if uploaded_file:
 # Submit Button
 # -------------------------------
 if st.button("🚀 Ask AI"):
-    if not API_KEY:
+    if not OPENROUTER_API_KEY:
         st.error("⚠️ Missing OpenRouter API Key. Please add it in Streamlit Secrets.")
     elif not user_input and not file_text:
         st.warning("Please enter a query or upload a file.")
@@ -89,6 +89,7 @@ if st.button("🚀 Ask AI"):
         query = user_input + "\n\n" + file_text
         answer = query_openrouter(query)
         st.success(answer)
+
 
 
 
