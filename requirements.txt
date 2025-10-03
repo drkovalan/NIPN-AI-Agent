@@ -1,7 +1,8 @@
-streamlit==1.26.0
+streamlit
 requests
 beautifulsoup4
 openrouter
-langchain==0.1.200
+langchain
 PyPDF2
 pandas
+chromadb
