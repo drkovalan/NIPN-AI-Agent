@@ -12,7 +12,7 @@ API_KEY = st.secrets["OPENROUTER_API_KEY"]
 
 # ---- LLM Setup (DeepSeek-V3 via OpenRouter) ----
 client = OpenRouterClient(api_key=API_KEY)
-MODEL_NAME = "deepseek/deepseek-chat-v3.1:free"
+MODEL_NAME = "mistralai/mistral-7b-instruct:free"
 
 # ---- Embeddings Setup ----
 embeddings = OpenAIEmbeddings(
@@ -116,4 +116,5 @@ if query:
         st.write(response['choices'][0]['message']['content'])
     else:
         st.warning("Please update the knowledge base first.")
+
 
