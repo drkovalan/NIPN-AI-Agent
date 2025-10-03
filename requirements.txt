@@ -4,4 +4,5 @@ beautifulsoup4
 chromadb
 PyPDF2
 pandas
-openrouter-python
+openrouter
+
