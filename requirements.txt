@@ -2,7 +2,7 @@ streamlit
 requests
 beautifulsoup4
 openrouter
-langchain
 chromadb
 PyPDF2
 pandas
+openai
