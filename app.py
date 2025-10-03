@@ -117,3 +117,4 @@ if query and documents:
     answer = response.choices[0].message["content"]
     st.markdown("**Answer:**")
     st.write(answer)
+
