@@ -6,116 +6,80 @@ from langchain.document_loaders import PyPDFLoader, TextLoader
 from openrouter import OpenRouterClient
 import os
 import pandas as pd
-# ---- Streamlit Secrets ----
-API_KEY = st.secrets["OPENROUTER_API_KEY"]
 
-# ---- LLM Setup (DeepSeek-V3 via OpenRouter) ----
+# -------------------------------
+# 1. Set up API Key
+# -------------------------------
+API_KEY = st.secrets.get("OPENROUTER_API_KEY")
+if not API_KEY:
+    st.error("Missing OpenRouter API Key. Please add it in Streamlit Secrets.")
+    st.stop()
+
 client = OpenRouterClient(api_key=API_KEY)
-MODEL_NAME = "mistralai/mistral-7b-instruct:free"
 
-# ---- Embeddings Setup ----
-embeddings = OpenAIEmbeddings(
-    model="text-embedding-3-small",
-    openai_api_key=API_KEY,
-    base_url="https://openrouter.ai/api/v1"
-)
+# -------------------------------
+# 2. Upload documents
+# -------------------------------
+st.title("NIPN AI Knowledge Agent")
+st.markdown("Upload PDFs or Excel files for NIPN knowledge base")
 
-st.title("📊 NIPN Knowledge AI Agent")
+uploaded_files = st.file_uploader("Upload PDF/Excel", type=["pdf", "xlsx"], accept_multiple_files=True)
 
-# Temporary folder for uploads
-os.makedirs("temp", exist_ok=True)
+documents = []
 
-# ---- Functions ----
-def process_upload(file):
-    path = os.path.join("temp", file.name)
-    with open(path, "wb") as f:
-        f.write(file.getbuffer())
-    if file.name.endswith(".pdf"):
-        loader = PyPDFLoader(path)
-    elif file.name.endswith(".txt"):
-        loader = TextLoader(path)
-    elif file.name.endswith(".xlsx"):
-        loader = UnstructuredExcelLoader(path)
-    else:
-        st.error("Unsupported file type")
-        return []
-    return loader.load()
+if uploaded_files:
+    for file in uploaded_files:
+        if file.type == "application/pdf":
+            loader = PyPDFLoader(file)
+            docs = loader.load()
+            documents.extend(docs)
+        elif file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+            df = pd.read_excel(file)
+            text = "\n".join(df.astype(str).apply(lambda x: " | ".join(x), axis=1))
+            documents.append(TextLoader(text).load()[0])
 
-def fetch_wp_content(site_url):
-    posts = []
-    page = 1
-    while True:
-        url = f"{site_url}/wp-json/wp/v2/posts?per_page=100&page={page}"
-        r = requests.get(url)
-        if r.status_code != 200:
-            break
-        data = r.json()
-        if not data:
-            break
-        for post in data:
-            title = post.get('title', {}).get('rendered', '')
-            content = post.get('content', {}).get('rendered', '')
-            posts.append(title + "\n" + content)
-        page += 1
-    return posts
+# -------------------------------
+# 3. Split documents into chunks
+# -------------------------------
+if documents:
+    splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
+    docs_chunks = splitter.split_documents(documents)
 
-# ---- Inputs ----
-uploaded_file = st.file_uploader("Upload PDF, Excel, or TXT", type=["pdf", "txt", "xlsx"])
-wp_site = st.text_input("WordPress Site URL (e.g. https://nipn.lsb.gov.la)")
-url_input = st.text_input("Or enter a webpage URL:")
+    st.success(f"{len(docs_chunks)} chunks created from uploaded documents!")
 
-# ---- Update Knowledge Base ----
-if st.button("🔄 Update Knowledge Base"):
-    all_docs = []
+    # -------------------------------
+    # 4. Create FAISS vector store
+    # -------------------------------
+    embeddings = OpenAIEmbeddings(openai_api_key=API_KEY)
+    vector_store = FAISS.from_documents(docs_chunks, embeddings)
+    st.success("FAISS vector store created!")
 
-    # Uploaded file
-    if uploaded_file is not None:
-        all_docs += process_upload(uploaded_file)
-        st.success(f"✅ {uploaded_file.name} processed!")
+# -------------------------------
+# 5. Query AI
+# -------------------------------
+query = st.text_input("Ask NIPN AI about nutrition data, reports, or findings:")
 
-    # WordPress site
-    if wp_site:
-        wp_texts = fetch_wp_content(wp_site)
-        all_docs += [{"page_content": t} for t in wp_texts]
-        st.success(f"✅ Fetched {len(wp_texts)} posts from WordPress")
+if query and documents:
+    # Search similar chunks
+    docs_found = vector_store.similarity_search(query, k=3)
+    context_text = "\n".join([d.page_content for d in docs_found])
 
-    # Single URL
-    if url_input:
-        loader = WebBaseLoader(url_input)
-        all_docs += loader.load()
-        st.success("✅ URL content added!")
+    prompt = f"""
+    You are a Nutrition Data AI Assistant for NIPN Laos.
+    Use the context below to answer user query professionally and concisely.
 
-    if all_docs:
-        splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
-        chunks = splitter.split_documents(all_docs)
-        db = FAISS.from_documents(chunks, embeddings)
-        db.save_local("faiss_index")
-        st.success("✅ Knowledge base updated!")
-    else:
-        st.warning("No content to add. Please provide files, WordPress URL, or webpage.")
+    Context:
+    {context_text}
 
-# ---- Query AI ----
-query = st.text_input("Ask a question about NIPN knowledge base:")
+    User Question: {query}
+    AI Answer:
+    """
 
-if query:
-    if os.path.exists("faiss_index"):
-        db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
-        results = db.similarity_search(query, k=3)
-        context = "\n\n".join([r.page_content for r in results])
-
-        # DeepSeek-V3 response
-        response = client.chat(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": "You are a Nutrition Data AI Assistant for NIPN."},
-                {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}\nAnswer:"}
-            ],
-        )
-        st.write("### 🤖 AI Answer")
-        st.write(response['choices'][0]['message']['content'])
-    else:
-        st.warning("Please update the knowledge base first.")
-
-
-
-
+    response = client.chat.create(
+        model="mistralai/mistral-7b-instruct:free",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=300
+    )
+    answer = response.choices[0].message["content"]
+    st.markdown("**Answer:**")
+    st.write(answer)
