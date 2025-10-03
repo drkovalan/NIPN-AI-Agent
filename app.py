@@ -1,5 +1,6 @@
 import streamlit as st
 from langchain.vectorstores import Chroma
+import chromadb
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import PyPDFLoader, TextLoader
@@ -81,3 +82,4 @@ if query and documents:
     answer = response.choices[0].message["content"]
     st.markdown("**Answer:**")
     st.write(answer)
+
