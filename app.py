@@ -116,3 +116,4 @@ if query:
         st.write(response['choices'][0]['message']['content'])
     else:
         st.warning("Please update the knowledge base first.")
+
