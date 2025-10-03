@@ -1,22 +1,20 @@
 import streamlit as st
 import os
 import requests
-from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import (
-    PyPDFLoader, TextLoader, UnstructuredExcelLoader, WebBaseLoader
-)
+from langchain.document_loaders import PyPDFLoader, TextLoader, UnstructuredExcelLoader, WebBaseLoader
 from openrouter import OpenRouterClient
 
-# ---- Streamlit secrets ----
+# ---- Streamlit Secrets ----
 API_KEY = st.secrets["OPENROUTER_API_KEY"]
 
 # ---- LLM Setup (DeepSeek-V3 via OpenRouter) ----
 client = OpenRouterClient(api_key=API_KEY)
 MODEL_NAME = "deepseek/deepseek-chat-v3.1:free"
 
-# ---- Embeddings ----
+# ---- Embeddings Setup ----
 embeddings = OpenAIEmbeddings(
     model="text-embedding-3-small",
     openai_api_key=API_KEY,
@@ -25,10 +23,10 @@ embeddings = OpenAIEmbeddings(
 
 st.title("📊 NIPN Knowledge AI Agent")
 
-# Temporary storage for uploaded files
+# Temporary folder for uploads
 os.makedirs("temp", exist_ok=True)
 
-# ---- Function to process uploads ----
+# ---- Functions ----
 def process_upload(file):
     path = os.path.join("temp", file.name)
     with open(path, "wb") as f:
@@ -44,7 +42,6 @@ def process_upload(file):
         return []
     return loader.load()
 
-# ---- Function to fetch WordPress content ----
 def fetch_wp_content(site_url):
     posts = []
     page = 1
@@ -63,12 +60,12 @@ def fetch_wp_content(site_url):
         page += 1
     return posts
 
-# ---- Input Sections ----
+# ---- Inputs ----
 uploaded_file = st.file_uploader("Upload PDF, Excel, or TXT", type=["pdf", "txt", "xlsx"])
 wp_site = st.text_input("WordPress Site URL (e.g. https://nipn.lsb.gov.la)")
 url_input = st.text_input("Or enter a webpage URL:")
 
-# ---- Update Knowledge Base Button ----
+# ---- Update Knowledge Base ----
 if st.button("🔄 Update Knowledge Base"):
     all_docs = []
 
@@ -98,7 +95,7 @@ if st.button("🔄 Update Knowledge Base"):
     else:
         st.warning("No content to add. Please provide files, WordPress URL, or webpage.")
 
-# ---- Query Section ----
+# ---- Query AI ----
 query = st.text_input("Ask a question about NIPN knowledge base:")
 
 if query:
