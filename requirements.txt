@@ -3,6 +3,6 @@ requests
 beautifulsoup4
 openrouter
 langchain==0.1.200
-unstructured
-openpyxl
-faiss-cpu==1.7.4
+PyPDF2
+pandas
+faiss-cpu-binary
