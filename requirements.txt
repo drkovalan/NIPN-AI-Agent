@@ -5,4 +5,3 @@ openrouter
 langchain==0.1.200
 PyPDF2
 pandas
-faiss-cpu-binary
